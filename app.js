@@ -5,9 +5,8 @@
   'use strict';
 
   // ---- Endpoint -----------------------------------------------------------
-  // New: deployed in the same Dokploy project (kad_yandexFORMs_leads) as
-  // the wizard. The legacy endpoint (kad-yandexFORMs-leads.dev.ii4ki.ru
-  // in cuzr_official project) is kept for backwards compat until sunset.
+  // FastAPI service (kad_yandexFORMs_leads) deployed in Dokploy.
+  // Same project as the wizard (kad_yandexFORMs_leads / production).
   var ENDPOINT = 'https://kad-yandexFORMs-leads.dev.ii4ki.ru/webhook/yandex';
 
   // ---- Object types → available work codes (mirrors backend parser) ----

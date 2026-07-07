@@ -135,92 +135,30 @@
         </div>
       </section>
 
-      <!-- STEP 4 — работы -->
+      <!-- STEP 4 — работы (multi-object, dynamic) -->
       <section class="panel" data-panel="4">
         <h2 class="panel__title">Какие работы нужны?</h2>
-        <p class="panel__hint">Введите номера нужных работ через запятую. Полный список — в&nbsp;подсказке справа.</p>
+        <p class="panel__hint">Добавьте объекты и&nbsp;для каждого отметьте нужные работы. Можно несколько объектов в&nbsp;одной заявке.</p>
 
-        <div class="work">
-          <div class="work__field">
-            <label class="field">
-              <span class="field__label">A. Межевые планы <em>*</em></span>
-              <input type="text" name="work_a" placeholder="например, 1, 6, 8" required />
-            </label>
-            <label class="field">
-              <span class="field__label">B. Технические планы</span>
-              <input type="text" name="work_b" placeholder="например, 1, 6" />
-            </label>
-            <label class="field">
-              <span class="field__label">C. ККР и заключения КИ</span>
-              <input type="text" name="work_c" placeholder="например, 1, 2" />
-            </label>
-            <label class="field">
-              <span class="field__label">D. Смежные услуги <em>(свободный ввод)</em></span>
-              <textarea name="work_d" rows="2" placeholder="например, выписка ЕГРН, схема КПТ, регистрация в Росреестре"></textarea>
-            </label>
-            <label class="field">
-              <span class="field__label">Дополнительные виды работ <em>(если не нашли)</em></span>
-              <textarea name="work_extra" rows="2"></textarea>
-            </label>
-            <label class="field">
-              <span class="field__label">Желаемая дата завершения</span>
-              <input type="date" name="deadline" />
-            </label>
-            <label class="field">
-              <span class="field__label">Срочность</span>
-              <select name="urgency">
-                <option value="обычная">Обычная</option>
-                <option value="срочно">Срочно (до 2 недель)</option>
-                <option value="очень срочно">Очень срочно (до 3 дней)</option>
-              </select>
-            </label>
-          </div>
+        <div class="objects" id="objects" aria-live="polite"></div>
 
-          <aside class="work__hint">
-            <details open>
-              <summary>A. Межевые планы</summary>
-              <ol>
-                <li>Уточнение границ ЗУ (межевание)</li>
-                <li>Раздел ЗУ</li>
-                <li>Объединение ЗУ</li>
-                <li>Перераспределение ЗУ</li>
-                <li>Образование ЗУ из гос/муниципальной собственности</li>
-                <li>Вынос границ в натуру</li>
-                <li>Образование части ЗУ</li>
-                <li>Исправление реестровой ошибки</li>
-                <li>Объединение с сохранением исходных</li>
-                <li>Раздел с сохранением исходного в изменённых границах</li>
-                <li>Установление сервитута</li>
-                <li>Межевание с уточнением площади</li>
-                <li>Схема расположения ЗУ на КПТ</li>
-              </ol>
-            </details>
-            <details>
-              <summary>B. Технические планы</summary>
-              <ol>
-                <li>ТП здания</li><li>ТП сооружения</li><li>ТП ОНС</li>
-                <li>ТП машино-места</li><li>ТП единого недвижимого комплекса</li>
-                <li>ТП помещения</li><li>ТП МКД</li><li>Акт обследования (снос)</li>
-                <li>ТП для ввода в эксплуатацию</li>
-                <li>Внесение изменений в ЕГРН</li>
-                <li>ТП для регистрации права</li>
-                <li>Техпаспорт</li>
-              </ol>
-            </details>
-            <details>
-              <summary>C. ККР и ЗКИ</summary>
-              <ol>
-                <li>Комплексные кадастровые работы (ККР)</li>
-                <li>Заключение кадастрового инженера (ЗКИ)</li>
-                <li>Судебная землеустроительная экспертиза</li>
-                <li>Межевой план для исправления реестровой ошибки</li>
-              </ol>
-            </details>
-            <details>
-              <summary>D. Смежные услуги</summary>
-              <p class="muted">Свободный ввод. Примеры: выписка ЕГРН, схема КПТ, регистрация в Росреестре, ГПЗУ, ТУ, перепланировка, изменение ВРИ, регистрация права.</p>
-            </details>
-          </aside>
+        <button type="button" class="btn btn--ghost btn--add" id="addObject">
+          <span aria-hidden="true">＋</span> Добавить объект
+        </button>
+
+        <div class="grid grid--2 mt-24">
+          <label class="field">
+            <span class="field__label">Желаемая дата завершения</span>
+            <input type="date" name="deadline" />
+          </label>
+          <label class="field">
+            <span class="field__label">Срочность</span>
+            <select name="urgency">
+              <option value="обычная">Обычная</option>
+              <option value="срочно">Срочно (до 2 недель)</option>
+              <option value="очень срочно">Очень срочно (до 3 дней)</option>
+            </select>
+          </label>
         </div>
       </section>
 

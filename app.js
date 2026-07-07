@@ -5,50 +5,152 @@
   'use strict';
 
   // ---- Endpoint -----------------------------------------------------------
-  // Override at deploy-time by editing this constant. Production target
-  // is the Dokploy-deployed FastAPI service.
   var ENDPOINT = 'https://kad-yandexFORMs-leads.dev.ii4ki.ru/webhook/yandex';
 
-  // ---- Work catalog (mirrors the parser) --------------------------------
-  var WORK_CATALOG = {
-    A: [
-      'Уточнение границ ЗУ (межевание)',
-      'Раздел ЗУ',
-      'Объединение ЗУ',
-      'Перераспределение ЗУ',
-      'Образование ЗУ из гос/муниципальной собственности',
-      'Вынос границ в натуру',
-      'Образование части ЗУ',
-      'Исправление реестровой ошибки',
-      'Объединение с сохранением исходных',
-      'Раздел с сохранением исходного в изменённых границах',
-      'Установление сервитута',
-      'Межевание с уточнением площади',
-      'Схема расположения ЗУ на КПТ'
-    ],
-    B: [
-      'ТП здания', 'ТП сооружения', 'ТП ОНС', 'ТП машино-места',
-      'ТП единого недвижимого комплекса', 'ТП помещения', 'ТП МКД',
-      'Акт обследования (снос)', 'ТП для ввода в эксплуатацию',
-      'Внесение изменений в ЕГРН', 'ТП для регистрации права', 'Техпаспорт'
-    ],
-    C: [
-      'ККР', 'ЗКИ', 'Судебная землеустроительная экспертиза',
-      'Межевой план для исправления реестровой ошибки'
-    ]
+  // ---- Object types → available work codes (mirrors backend parser) ----
+  // Each item: [code, label, hint]
+  // Code prefix maps to deal title prefix and parser branch:
+  //   A = Межевые планы, B = Технические планы, C = ККР/ЗКИ, D = Смежные услуги.
+  var OBJECT_TYPES = {
+    'Земельный участок': {
+      icon: '🌿',
+      categories: [
+        { id: 'A', title: 'A. Межевые планы', works: [
+          ['1', 'Уточнение границ (межевание)'],
+          ['2', 'Раздел ЗУ'],
+          ['3', 'Объединение ЗУ'],
+          ['4', 'Перераспределение ЗУ'],
+          ['5', 'Образование ЗУ из гос/муниципальной собственности'],
+          ['6', 'Вынос границ в натуру'],
+          ['7', 'Образование части ЗУ'],
+          ['8', 'Исправление реестровой ошибки'],
+          ['11', 'Установление сервитута'],
+          ['13', 'Схема расположения ЗУ на КПТ']
+        ]},
+        { id: 'D', title: 'D. Смежные услуги', works: [
+          ['1', 'Выписка из ЕГРН'],
+          ['11', 'Регистрация в Росреестре'],
+          ['15', 'Подготовка схемы границ'],
+          ['20', 'Изменение ВРИ'],
+          ['21', 'ГПЗУ / разрешение на строительство'],
+          ['24', 'Согласование границ с муниципалитетом'],
+          ['30', 'Подготовка XML для ЕГРН'],
+          ['31', 'Подача в Росреестр без доверенности (218-ФЗ)']
+        ]}
+      ]
+    },
+    'Жилой дом / садовый дом': {
+      icon: '🏠',
+      categories: [
+        { id: 'B', title: 'B. Технические планы', works: [
+          ['1', 'ТП здания (жилой/садовый дом)'],
+          ['3', 'ТП ОНС'],
+          ['8', 'Акт обследования (снос)'],
+          ['9', 'ТП для ввода в эксплуатацию'],
+          ['10', 'Внесение изменений в ЕГРН (реконструкция)']
+        ]},
+        { id: 'D', title: 'D. Смежные услуги', works: [
+          ['4', 'Уведомление о начале строительства'],
+          ['5', 'Уведомление об окончании строительства'],
+          ['6', 'Разрешение на ввод в эксплуатацию'],
+          ['11', 'Регистрация в Росреестре'],
+          ['19', 'Согласование перепланировки']
+        ]}
+      ]
+    },
+    'Квартира / помещение': {
+      icon: '🚪',
+      categories: [
+        { id: 'B', title: 'B. Технические планы', works: [
+          ['6', 'ТП помещения (квартира)'],
+          ['10', 'Внесение изменений в ЕГРН (перепланировка)'],
+          ['12', 'Технический паспорт']
+        ]},
+        { id: 'D', title: 'D. Смежные услуги', works: [
+          ['11', 'Регистрация в Росреестре'],
+          ['17', 'Договор купли-продажи / дарения'],
+          ['18', 'Регистрация перехода права'],
+          ['19', 'Согласование перепланировки']
+        ]}
+      ]
+    },
+    'Здание / сооружение': {
+      icon: '🏢',
+      categories: [
+        { id: 'B', title: 'B. Технические планы', works: [
+          ['1', 'ТП здания'],
+          ['2', 'ТП сооружения'],
+          ['5', 'ТП единого недвижимого комплекса'],
+          ['7', 'ТП МКД'],
+          ['8', 'Акт обследования (снос)'],
+          ['9', 'ТП для ввода в эксплуатацию'],
+          ['10', 'Внесение изменений в ЕГРН (реконструкция)'],
+          ['12', 'Технический паспорт']
+        ]},
+        { id: 'D', title: 'D. Смежные услуги', works: [
+          ['6', 'Разрешение на ввод в эксплуатацию'],
+          ['11', 'Регистрация в Росреестре'],
+          ['13', 'Снятие с кадастрового учёта']
+        ]}
+      ]
+    },
+    'Объект незавершённого строительства': {
+      icon: '🏗',
+      categories: [
+        { id: 'B', title: 'B. Технические планы', works: [
+          ['3', 'ТП ОНС'],
+          ['8', 'Акт обследования (если консервация)'],
+          ['9', 'ТП для ввода в эксплуатацию']
+        ]},
+        { id: 'D', title: 'D. Смежные услуги', works: [
+          ['4', 'Уведомление о начале строительства'],
+          ['5', 'Уведомление об окончании строительства'],
+          ['6', 'Разрешение на ввод в эксплуатацию'],
+          ['11', 'Регистрация в Росреестре']
+        ]}
+      ]
+    },
+    'Машино-место': {
+      icon: '🚗',
+      categories: [
+        { id: 'B', title: 'B. Технические планы', works: [
+          ['4', 'ТП машино-места'],
+          ['10', 'Внесение изменений в ЕГРН']
+        ]},
+        { id: 'D', title: 'D. Смежные услуги', works: [
+          ['11', 'Регистрация в Росреестре'],
+          ['18', 'Регистрация перехода права']
+        ]}
+      ]
+    },
+    'Линейный объект': {
+      icon: '〰',
+      categories: [
+        { id: 'D', title: 'D. Смежные услуги', works: [
+          ['27', 'Постановка на кадастровый учёт линейного объекта'],
+          ['25', 'Получение ТУ (электро-, газо-, водо-)'],
+          ['26', 'Подключение к сетям'],
+          ['11', 'Регистрация в Росреестре']
+        ]}
+      ]
+    },
+    'Другое': {
+      icon: '📄',
+      categories: [
+        { id: 'C', title: 'C. ККР и заключения КИ', works: [
+          ['1', 'Комплексные кадастровые работы (ККР)'],
+          ['2', 'Заключение кадастрового инженера (ЗКИ)'],
+          ['3', 'Судебная землеустроительная экспертиза']
+        ]},
+        { id: 'D', title: 'D. Смежные услуги', works: [
+          ['16', 'Оценка рыночной стоимости'],
+          ['14', 'Восстановление правоустанавливающих документов'],
+          ['28', 'Оформление сервитута'],
+          ['29', 'Согласование с Росреестром исправления ошибок']
+        ]}
+      ]
+    }
   };
-
-  function expandCodes(input, kind) {
-    if (!input) return '';
-    var items = WORK_CATALOG[kind];
-    if (!items) return input;
-    var out = [];
-    input.split(',').forEach(function (tok) {
-      var n = parseInt((tok.match(/\d+/) || [''])[0], 10);
-      if (n >= 1 && n <= items.length) out.push(items[n - 1]);
-    });
-    return out.join('; ');
-  }
 
   // ---- Form state --------------------------------------------------------
   var TOTAL_STEPS = 5;
@@ -56,9 +158,136 @@
   var form = document.getElementById('wizard');
   var navEl = document.getElementById('nav');
   var stepsEl = document.getElementById('steps');
+  var objectsList = document.getElementById('objects');
+  var objectSeq = 0;
 
   function $(name) { return form.elements[name]; }
   function val(name) { var el = $(name); return el && 'value' in el ? (el.value || '').trim() : ''; }
+
+  // ---- Object cards (step 4) -------------------------------------------
+  function makeId() { return 'obj_' + (++objectSeq); }
+
+  function addObject() {
+    var id = makeId();
+    var div = document.createElement('div');
+    div.className = 'object';
+    div.dataset.objectId = id;
+    div.innerHTML = renderObjectForm(id);
+    objectsList.appendChild(div);
+    div.querySelector('select[name="object_type"]').addEventListener('change', function () {
+      refreshObjectWorks(div);
+      updateObjectSummary(div);
+    });
+    div.querySelectorAll('input, select, textarea').forEach(function (el) {
+      el.addEventListener('input', function () { updateObjectSummary(div); });
+      el.addEventListener('change', function () { updateObjectSummary(div); });
+    });
+    div.querySelector('.object__collapse').addEventListener('click', function () { collapseObject(div); });
+    div.querySelector('.object__remove').addEventListener('click', function () { removeObject(div); });
+    return div;
+  }
+
+  function renderObjectForm(id) {
+    var types = Object.keys(OBJECT_TYPES);
+    var opts = ['<option value="">— выберите тип объекта —</option>']
+      .concat(types.map(function (t) { return '<option value="' + t + '">' + t + '</option>'; }))
+      .join('');
+    return [
+      '<div class="object__header">',
+      '  <div class="object__icon" data-icon>?</div>',
+      '  <div class="object__summary">',
+      '    <b>Новый объект</b>',
+      '    <span class="muted" data-subtitle>Выберите тип и отметьте работы</span>',
+      '  </div>',
+      '  <div class="object__actions">',
+      '    <button type="button" class="iconbtn object__collapse" title="Свернуть">▾</button>',
+      '    <button type="button" class="iconbtn iconbtn--danger object__remove" title="Удалить">×</button>',
+      '  </div>',
+      '</div>',
+      '<div class="object__body">',
+      '  <div class="grid">',
+      '    <label class="field"><span class="field__label">Тип объекта <em>*</em></span>',
+      '      <select name="object_type" data-id="' + id + '" required>' + opts + '</select></label>',
+      '    <label class="field"><span class="field__label">Кадастровый номер <em>(если есть)</em>',
+      '      <input type="text" name="object_cadnum" placeholder="69:10:0000023:456" /></label>',
+      '    <label class="field field--full"><span class="field__label">Адрес или ориентир <em>*</em>',
+      '      <input type="text" name="object_address" required placeholder="г. Тверь, ул. Лесная, 12" /></label>',
+      '    <label class="field"><span class="field__label">Площадь, м²',
+      '      <input type="text" name="object_area" inputmode="decimal" placeholder="например, 1500" /></label>',
+      '    <label class="field"><span class="field__label">Присвоен ли официальный адрес?',
+      '      <select name="object_address_official"><option value="">— не знаю —</option><option>Да</option><option>Нет</option></select></label>',
+      '  </div>',
+      '  <div class="object__works"></div>',
+      '</div>'
+    ].join('');
+  }
+
+  function refreshObjectWorks(card) {
+    var t = (card.querySelector('select[name="object_type"]') || {}).value;
+    var worksBox = card.querySelector('.object__works');
+    if (!t || !OBJECT_TYPES[t]) {
+      worksBox.innerHTML = '';
+      return;
+    }
+    var parts = ['<div class="object__section"><p class="object__section-title">Выберите нужные работы</p>'];
+    OBJECT_TYPES[t].categories.forEach(function (cat) {
+      parts.push('<div class="object__section">');
+      parts.push('<p class="object__section-title">' + cat.title + '</p>');
+      parts.push('<div class="checks">');
+      cat.works.forEach(function (w) {
+        var name = 'work_' + cat.id + '_' + w[0];
+        parts.push('<label><input type="checkbox" name="' + name + '" value="' + cat.id + w[0] + '" />'
+          + '<span>' + w[0] + '. ' + w[1] + '</span></label>');
+      });
+      parts.push('</div></div>');
+    });
+    parts.push('</div>');
+    worksBox.innerHTML = parts.join('');
+    worksBox.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+      cb.addEventListener('change', function () { updateObjectSummary(card); });
+    });
+  }
+
+  function updateObjectSummary(card) {
+    var t = (card.querySelector('select[name="object_type"]') || {}).value || 'Новый объект';
+    var addr = (card.querySelector('input[name="object_address"]') || {}).value || '';
+    var cad = (card.querySelector('input[name="object_cadnum"]') || {}).value || '';
+    var works = [];
+    card.querySelectorAll('input[type=checkbox]:checked').forEach(function (cb) {
+      var lbl = cb.parentElement.querySelector('span');
+      if (lbl) works.push(lbl.textContent.replace(/^\d+\.\s*/, ''));
+    });
+    var titleBit = t;
+    if (addr) titleBit += ' · ' + (addr.length > 50 ? addr.slice(0, 50) + '…' : addr);
+    card.querySelector('[data-icon]').textContent = (OBJECT_TYPES[t] || {}).icon || '📄';
+    var sum = card.querySelector('.object__summary b');
+    var sub = card.querySelector('[data-subtitle]');
+    if (sum) sum.textContent = titleBit;
+    if (sub) {
+      var pieces = [];
+      if (cad) pieces.push('КН ' + cad);
+      pieces.push(works.length ? 'Работ: ' + works.length + ' (' + works.slice(0, 2).join(', ') + (works.length > 2 ? '…' : '') + ')'
+                              : 'Работы не выбраны');
+      sub.textContent = pieces.join(' · ');
+    }
+  }
+
+  function collapseObject(card) {
+    card.classList.toggle('is-collapsed');
+    var btn = card.querySelector('.object__collapse');
+    btn.textContent = card.classList.contains('is-collapsed') ? '▸' : '▾';
+  }
+
+  function removeObject(card) {
+    if (!confirm('Удалить объект?')) return;
+    card.parentNode.removeChild(card);
+  }
+
+  document.getElementById('addObject').addEventListener('click', function () {
+    var card = addObject();
+    card.classList.add('is-focused');
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
 
   // ---- Show/hide step ----------------------------------------------------
   function showStep(n) {
@@ -112,6 +341,19 @@
     });
     if (!ok) {
       panel.querySelector('.field') && panel.querySelector('.field').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    // For step 4, also require at least one object with at least one work
+    if (n === 4) {
+      if (!objectsList.children.length) {
+        alert('Добавьте хотя бы один объект.');
+        return false;
+      }
+      var anyWork = false;
+      objectsList.querySelectorAll('input[type=checkbox]:checked').forEach(function () { anyWork = true; });
+      if (!anyWork) {
+        alert('Отметьте хотя бы одну работу.');
+        return false;
+      }
     }
     return ok;
   }
@@ -182,24 +424,55 @@
     });
   }
 
-  // ---- Cadastral number mask --------------------------------------------
-  var cadEl = $('object_cadnum');
-  if (cadEl) {
-    cadEl.addEventListener('input', function (e) {
+  // ---- Cadastral number mask (all object cards + step 3 legacy) ----------
+  function attachCadnumMask(el) {
+    if (!el || el.dataset.cadMask) return;
+    el.dataset.cadMask = '1';
+    el.addEventListener('input', function (e) {
       var d = e.target.value.replace(/\D/g, '').slice(0, 19);
       var parts = [d.slice(0, 2), d.slice(2, 4), d.slice(4, 7), d.slice(7)];
       e.target.value = parts.filter(Boolean).join(':');
     });
   }
+  document.addEventListener('input', function (e) {
+    if (e.target && e.target.name === 'object_cadnum') attachCadnumMask(e.target);
+  });
+  attachCadnumMask($('object_cadnum'));
 
   // ---- Build answers array in Yandex Forms shape ------------------------
   function buildAnswers() {
     var ct = (form.querySelector('input[name="customer_type"]:checked') || {}).value || '';
-    var workA = expandCodes(val('work_a'), 'A');
-    var workB = expandCodes(val('work_b'), 'B');
-    var workC = expandCodes(val('work_c'), 'C');
-    var workD = val('work_d');
-    var workExtra = val('work_extra');
+    var objects = [];
+    objectsList.querySelectorAll('.object').forEach(function (card) {
+      var o = {
+        object_type: (card.querySelector('select[name="object_type"]') || {}).value || '',
+        object_cadnum: (card.querySelector('input[name="object_cadnum"]') || {}).value || '',
+        object_address: (card.querySelector('input[name="object_address"]') || {}).value || '',
+        object_area: (card.querySelector('input[name="object_area"]') || {}).value || '',
+        object_address_official: (card.querySelector('select[name="object_address_official"]') || {}).value || '',
+        work_a: [], work_b: [], work_c: [], work_d: []
+      };
+      card.querySelectorAll('input[type=checkbox]:checked').forEach(function (cb) {
+        var v = cb.value || '';  // e.g. "A1", "B6", "D11"
+        var prefix = v.charAt(0);
+        var num = v.slice(1);
+        if (o['work_' + prefix.toLowerCase()]) o['work_' + prefix.toLowerCase()].push(num);
+      });
+      objects.push(o);
+    });
+
+    // Map: first object's first work → "work_main" for TITLE.
+    // We also keep raw answers per object so backend can use them later.
+    var primary = objects[0] || {};
+    var workMain = '';
+    var firstWorkArr = primary.work_a && primary.work_a.length ? primary.work_a
+      : primary.work_b && primary.work_b.length ? primary.work_b
+      : primary.work_c && primary.work_c.length ? primary.work_c
+      : primary.work_d && primary.work_d.length ? primary.work_d : [];
+    if (firstWorkArr.length) {
+      // Will be expanded by the backend parser via WORK_CATALOG.
+      workMain = 'A' + firstWorkArr[0];
+    }
 
     var map = {
       customer_type: ct,
@@ -209,16 +482,19 @@
       phone: val('phone'),
       email: val('email'),
       snils: val('snils'),
-      object_kind: val('object_kind'),
-      object_cadnum: val('object_cadnum'),
-      object_address: val('object_address'),
-      object_area: val('object_area'),
-      object_address_official: val('object_address_official'),
-      work_a: workA,
-      work_b: workB,
-      work_c: workC,
-      work_d: workD,
-      work_extra: workExtra,
+      // Legacy single-object fields (first object, for parser compat):
+      object_kind: primary.object_type || '',
+      object_cadnum: primary.object_cadnum || '',
+      object_address: primary.object_address || '',
+      object_area: primary.object_area || '',
+      object_address_official: primary.object_address_official || '',
+      work_main: workMain,
+      work_a: (primary.work_a || []).join(', '),
+      work_b: (primary.work_b || []).join(', '),
+      work_c: (primary.work_c || []).join(', '),
+      work_d: (primary.work_d || []).join(', '),
+      // New multi-object field (sent as JSON-encoded string for transport).
+      objects: JSON.stringify(objects),
       files_list: val('files_list'),
       notes: val('notes'),
       deadline: val('deadline'),
@@ -232,15 +508,6 @@
       if (v === '' || v === null || v === undefined) return;
       answers.push({ question_id: k, value: v });
     });
-
-    // Files — shape as Yandex Forms file answer (with name + size + a base64 dataURL).
-    // Server-side, files are currently a TODO on the FastAPI side; we send metadata only.
-    var files = Array.from((filesInput && filesInput.files) || []);
-    if (files.length) {
-      files.forEach(function (f) {
-        answers.push({ question_id: 'files', value: { name: f.name, size: f.size, type: f.type } });
-      });
-    }
     return answers;
   }
 
@@ -282,6 +549,7 @@
       });
   });
 
-  // ---- Init --------------------------------------------------------------
+  // ---- Init: open with one empty object ---------------------------------
   showStep(1);
+  addObject();
 })();

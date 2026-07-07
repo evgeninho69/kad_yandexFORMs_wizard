@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Заявка на кадастровые работы — 2КАД</title>
+  <meta name="description" content="Заявка на кадастровые работы, межевание, технические планы, ЗКИ. Ответ в течение 1 рабочего дня." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <a class="brand" href="/">
+        <span class="brand__mark">2</span><span class="brand__text">КАД</span>
+      </a>
+      <a class="topbar__phone" href="tel:+74822415768">+7 (4822) 41-57-68</a>
+    </div>
+  </header>
+
+  <main class="container main">
+    <section class="hero">
+      <h1>Заявка на&nbsp;кадастровые работы</h1>
+      <p class="hero__sub">5&nbsp;шагов · ~3&nbsp;минуты · ответ в&nbsp;течение 1&nbsp;рабочего дня</p>
+    </section>
+
+    <ol class="steps" id="steps" aria-label="Шаги заявки">
+      <li class="steps__item is-active" data-step="1"><span>1</span>Тип заказчика</li>
+      <li class="steps__item" data-step="2"><span>2</span>Заказчик</li>
+      <li class="steps__item" data-step="3"><span>3</span>Объект</li>
+      <li class="steps__item" data-step="4"><span>4</span>Работы</li>
+      <li class="steps__item" data-step="5"><span>5</span>Документы</li>
+    </ol>
+
+    <form id="wizard" class="card" novalidate>
+      <!-- STEP 1 — тип заказчика -->
+      <section class="panel is-active" data-panel="1">
+        <h2 class="panel__title">Кто заказывает работы?</h2>
+        <p class="panel__hint">Выберите тип — от&nbsp;этого зависит, какие документы и&nbsp;реквизиты мы&nbsp;попросим дальше.</p>
+
+        <div class="cards-radio">
+          <label class="rcard">
+            <input type="radio" name="customer_type" value="Физическое лицо" required />
+            <span class="rcard__title">Физическое лицо</span>
+            <span class="rcard__hint">Собственник участка, дома или&nbsp;квартиры</span>
+          </label>
+          <label class="rcard">
+            <input type="radio" name="customer_type" value="Индивидуальный предприниматель (ИП)" />
+            <span class="rcard__title">ИП</span>
+            <span class="rcard__hint">Индивидуальный предприниматель</span>
+          </label>
+          <label class="rcard">
+            <input type="radio" name="customer_type" value="Юридическое лицо" />
+            <span class="rcard__title">Юр. лицо</span>
+            <span class="rcard__hint">ООО, АО, ЗАО, ГСК, СНТ и&nbsp;т.&nbsp;п.</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- STEP 2 — заказчик -->
+      <section class="panel" data-panel="2">
+        <h2 class="panel__title">Данные заказчика</h2>
+
+        <div class="grid" id="legal-block" hidden>
+          <label class="field">
+            <span class="field__label">Название организации <em>*</em></span>
+            <input type="text" name="org_name" autocomplete="organization" />
+          </label>
+          <label class="field">
+            <span class="field__label">ИНН <em>*</em></span>
+            <input type="text" name="inn" inputmode="numeric" maxlength="12" pattern="[0-9]{10,12}" placeholder="10 или 12 цифр" />
+          </label>
+        </div>
+
+        <div class="grid">
+          <label class="field">
+            <span class="field__label">ФИО контактного лица <em>*</em></span>
+            <input type="text" name="fio" autocomplete="name" required />
+          </label>
+          <label class="field">
+            <span class="field__label">Телефон <em>*</em></span>
+            <input type="tel" name="phone" autocomplete="tel" placeholder="+7 ___ ___-__-__" required />
+          </label>
+          <label class="field">
+            <span class="field__label">Email <em>*</em></span>
+            <input type="email" name="email" autocomplete="email" required />
+          </label>
+          <label class="field" id="snils-field">
+            <span class="field__label">СНИЛС <em>(необязательно)</em></span>
+            <input type="text" name="snils" placeholder="XXX-XXX-XXX XX" />
+          </label>
+        </div>
+      </section>
+
+      <!-- STEP 3 — объект -->
+      <section class="panel" data-panel="3">
+        <h2 class="panel__title">Объект работ</h2>
+        <div class="grid">
+          <label class="field">
+            <span class="field__label">Что является объектом <em>*</em></span>
+            <select name="object_kind" required>
+              <option value="">— выберите —</option>
+              <option>Земельный участок</option>
+              <option>Жилой дом / садовый дом</option>
+              <option>Квартира / помещение</option>
+              <option>Здание / сооружение</option>
+              <option>Объект незавершённого строительства</option>
+              <option>Машино-место</option>
+              <option>Линейный объект</option>
+              <option>Другое</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">Кадастровый номер <em>(если есть)</em></span>
+            <input type="text" name="object_cadnum" placeholder="69:10:0000023:456" />
+          </label>
+          <label class="field field--full">
+            <span class="field__label">Адрес или ориентир объекта <em>*</em></span>
+            <input type="text" name="object_address" required placeholder="Тверская обл., д. Медниково, ул. Лесная, 12" />
+          </label>
+          <label class="field">
+            <span class="field__label">Площадь, м²</span>
+            <input type="text" name="object_area" inputmode="decimal" placeholder="например, 1500" />
+          </label>
+          <label class="field">
+            <span class="field__label">Присвоен ли официальный адрес?</span>
+            <select name="object_address_official">
+              <option value="">— не знаю —</option>
+              <option>Да</option>
+              <option>Нет</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <!-- STEP 4 — работы -->
+      <section class="panel" data-panel="4">
+        <h2 class="panel__title">Какие работы нужны?</h2>
+        <p class="panel__hint">Введите номера нужных работ через запятую. Полный список — в&nbsp;подсказке справа.</p>
+
+        <div class="work">
+          <div class="work__field">
+            <label class="field">
+              <span class="field__label">A. Межевые планы <em>*</em></span>
+              <input type="text" name="work_a" placeholder="например, 1, 6, 8" required />
+            </label>
+            <label class="field">
+              <span class="field__label">B. Технические планы</span>
+              <input type="text" name="work_b" placeholder="например, 1, 6" />
+            </label>
+            <label class="field">
+              <span class="field__label">C. ККР и заключения КИ</span>
+              <input type="text" name="work_c" placeholder="например, 1, 2" />
+            </label>
+            <label class="field">
+              <span class="field__label">D. Смежные услуги <em>(свободный ввод)</em></span>
+              <textarea name="work_d" rows="2" placeholder="например, выписка ЕГРН, схема КПТ, регистрация в Росреестре"></textarea>
+            </label>
+            <label class="field">
+              <span class="field__label">Дополнительные виды работ <em>(если не нашли)</em></span>
+              <textarea name="work_extra" rows="2"></textarea>
+            </label>
+            <label class="field">
+              <span class="field__label">Желаемая дата завершения</span>
+              <input type="date" name="deadline" />
+            </label>
+            <label class="field">
+              <span class="field__label">Срочность</span>
+              <select name="urgency">
+                <option value="обычная">Обычная</option>
+                <option value="срочно">Срочно (до 2 недель)</option>
+                <option value="очень срочно">Очень срочно (до 3 дней)</option>
+              </select>
+            </label>
+          </div>
+
+          <aside class="work__hint">
+            <details open>
+              <summary>A. Межевые планы</summary>
+              <ol>
+                <li>Уточнение границ ЗУ (межевание)</li>
+                <li>Раздел ЗУ</li>
+                <li>Объединение ЗУ</li>
+                <li>Перераспределение ЗУ</li>
+                <li>Образование ЗУ из гос/муниципальной собственности</li>
+                <li>Вынос границ в натуру</li>
+                <li>Образование части ЗУ</li>
+                <li>Исправление реестровой ошибки</li>
+                <li>Объединение с сохранением исходных</li>
+                <li>Раздел с сохранением исходного в изменённых границах</li>
+                <li>Установление сервитута</li>
+                <li>Межевание с уточнением площади</li>
+                <li>Схема расположения ЗУ на КПТ</li>
+              </ol>
+            </details>
+            <details>
+              <summary>B. Технические планы</summary>
+              <ol>
+                <li>ТП здания</li><li>ТП сооружения</li><li>ТП ОНС</li>
+                <li>ТП машино-места</li><li>ТП единого недвижимого комплекса</li>
+                <li>ТП помещения</li><li>ТП МКД</li><li>Акт обследования (снос)</li>
+                <li>ТП для ввода в эксплуатацию</li>
+                <li>Внесение изменений в ЕГРН</li>
+                <li>ТП для регистрации права</li>
+                <li>Техпаспорт</li>
+              </ol>
+            </details>
+            <details>
+              <summary>C. ККР и ЗКИ</summary>
+              <ol>
+                <li>Комплексные кадастровые работы (ККР)</li>
+                <li>Заключение кадастрового инженера (ЗКИ)</li>
+                <li>Судебная землеустроительная экспертиза</li>
+                <li>Межевой план для исправления реестровой ошибки</li>
+              </ol>
+            </details>
+            <details>
+              <summary>D. Смежные услуги</summary>
+              <p class="muted">Свободный ввод. Примеры: выписка ЕГРН, схема КПТ, регистрация в Росреестре, ГПЗУ, ТУ, перепланировка, изменение ВРИ, регистрация права.</p>
+            </details>
+          </aside>
+        </div>
+      </section>
+
+      <!-- STEP 5 — документы и комментарий -->
+      <section class="panel" data-panel="5">
+        <h2 class="panel__title">Документы и комментарий</h2>
+        <div class="grid">
+          <label class="field field--full">
+            <span class="field__label">Прикрепите документы <em>(до 20 файлов, 20&nbsp;МБ каждый)</em></span>
+            <input type="file" name="files" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" />
+            <span class="field__hint">Выписка ЕГРН, правоустанавливающие, доверенность, паспорт (для&nbsp;ФЛ), ИНН/ОГРН (для&nbsp;ЮЛ)</span>
+            <ul class="files" id="filesList" hidden></ul>
+          </label>
+          <label class="field field--full">
+            <span class="field__label">Перечислите прикреплённые документы <em>(если не по именам файлов)</em></span>
+            <textarea name="files_list" rows="2" placeholder="например: выписка ЕГРН от 01.07.2026, доверенность №123"></textarea>
+          </label>
+          <label class="field field--full">
+            <span class="field__label">Опишите задачу своими словами</span>
+            <textarea name="notes" rows="4" placeholder="например: уточнить границы, соседи согласны, нужна выписка для суда"></textarea>
+          </label>
+          <label class="field field--full">
+            <span class="field__label">Откуда узнали о нас?</span>
+            <input type="text" name="source" placeholder="поиск, рекомендация, соцсети…" />
+          </label>
+          <label class="check field--full">
+            <input type="checkbox" name="consent_pdn" required />
+            <span>Согласен на обработку персональных данных в&nbsp;соответствии с&nbsp;<a href="#" onclick="return false">политикой 152-ФЗ</a></span>
+          </label>
+        </div>
+      </section>
+
+      <!-- success screen -->
+      <section class="panel panel--success" data-panel="success" hidden>
+        <h2 class="panel__title">Заявка принята ✓</h2>
+        <p class="panel__hint">Номер заявки: <strong id="dealId">—</strong></p>
+        <p>Мы свяжемся с&nbsp;вами в&nbsp;течение 1&nbsp;рабочего дня. На&nbsp;указанный email отправлено подтверждение.</p>
+        <p>Если срочно — звоните <a href="tel:+74822415768">+7 (4822) 41-57-68</a> или пишите <a href="mailto:info@2kad.ru">info@2kad.ru</a>.</p>
+      </section>
+
+      <!-- navigation -->
+      <nav class="nav" id="nav" hidden>
+        <button type="button" class="btn btn--ghost" id="prev">← Назад</button>
+        <span class="nav__spacer"></span>
+        <button type="button" class="btn btn--primary" id="next">Далее →</button>
+        <button type="submit" class="btn btn--primary" id="submit" hidden>Отправить заявку</button>
+      </nav>
+    </form>
+
+    <footer class="foot">
+      <p>ООО «Центр недвижимости 2КАД» · ИНН&nbsp;6950167545 · г.&nbsp;Тверь, ул.&nbsp;Медниковская, д.&nbsp;53, пом.&nbsp;6, оф.&nbsp;22</p>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

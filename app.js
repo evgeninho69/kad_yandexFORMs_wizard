@@ -161,12 +161,15 @@
   var navEl = document.getElementById('nav');
   var stepsEl = document.getElementById('steps');
   var objectsList = document.getElementById('objects');
+  var worksNav = document.getElementById('worksNav');
+  var worksMain = document.getElementById('worksMain');
   var objectSeq = 0;
+  var activeWorkObjId = null;
 
   function $(name) { return form.elements[name]; }
   function val(name) { var el = $(name); return el && 'value' in el ? (el.value || '').trim() : ''; }
 
-  // ---- Object cards (step 4) -------------------------------------------
+  // ---- Object cards (шаг 3: только данные; работы — в шаге 4) ---------
   function makeId() { return 'obj_' + (++objectSeq); }
 
   function addObject() {
@@ -176,17 +179,44 @@
     div.dataset.objectId = id;
     div.innerHTML = renderObjectForm(id);
     objectsList.appendChild(div);
+
+    // Чекбокс «адрес как у первого объекта» — только для НЕ-первого
+    var copyFirst = div.querySelector('.object__copyfirst');
+    if (copyFirst) {
+      var cb = copyFirst.querySelector('input[type=checkbox]');
+      if (objectsList.children.length <= 1) {
+        copyFirst.hidden = true;
+      } else {
+        cb.addEventListener('change', function () {
+          if (cb.checked) copyFromFirst(div);
+        });
+      }
+    }
+
+    // Слушатели на поля
     div.querySelector('select[name="object_type"]').addEventListener('change', function () {
-      refreshObjectWorks(div);
-      updateObjectSummary(div);
+      updateObjectIcon(div);
+      rebuildWorksFor(div);
     });
     div.querySelectorAll('input, select, textarea').forEach(function (el) {
-      el.addEventListener('input', function () { updateObjectSummary(div); });
-      el.addEventListener('change', function () { updateObjectSummary(div); });
+      el.addEventListener('input', function () { updateObjectIcon(div); });
+      el.addEventListener('change', function () { updateObjectIcon(div); });
     });
-    div.querySelector('.object__collapse').addEventListener('click', function () { collapseObject(div); });
     div.querySelector('.object__remove').addEventListener('click', function () { removeObject(div); });
     return div;
+  }
+
+  function copyFromFirst(card) {
+    var first = objectsList.querySelector('.object');
+    if (!first || first === card) return;
+    var src = {
+      object_address: (first.querySelector('input[name="object_address"]') || {}).value || '',
+      object_address_official: (first.querySelector('select[name="object_address_official"]') || {}).value || ''
+    };
+    var dstAddr = card.querySelector('input[name="object_address"]');
+    var dstOff = card.querySelector('select[name="object_address_official"]');
+    if (dstAddr) dstAddr.value = src.object_address;
+    if (dstOff) dstOff.value = src.object_address_official;
   }
 
   function renderObjectForm(id) {
@@ -196,97 +226,203 @@
       .join('');
     return [
       '<div class="object__header">',
-      '  <div class="object__icon" data-icon>?</div>',
+      '  <div class="object__icon" data-icon>📄</div>',
       '  <div class="object__summary">',
       '    <b>Новый объект</b>',
-      '    <span class="muted" data-subtitle>Выберите тип и отметьте работы</span>',
+      '    <span class="muted" data-subtitle>Выберите тип и заполните данные</span>',
       '  </div>',
       '  <div class="object__actions">',
-      '    <button type="button" class="iconbtn object__collapse" title="Свернуть">▾</button>',
       '    <button type="button" class="iconbtn iconbtn--danger object__remove" title="Удалить">×</button>',
       '  </div>',
       '</div>',
       '<div class="object__body">',
+      // Чекбокс «адрес как у первого» — показываем через CSS/JS (для не-первого)
+      '  <label class="object__copyfirst" hidden>',
+      '    <input type="checkbox" />',
+      '    <span>Адрес как у первого объекта</span>',
+      '  </label>',
       '  <div class="grid">',
-      '    <label class="field"><span class="field__label">Тип объекта <em>*</em></span>',
-      '      <select name="object_type" data-id="' + id + '" required>' + opts + '</select></label>',
+      '    <label class="field field--full"><span class="field__label">Тип объекта <em>*</em></span>',
+      '      <select name="object_type" required>' + opts + '</select></label>',
       '    <label class="field"><span class="field__label">Кадастровый номер <em>(если есть)</em>',
       '      <input type="text" name="object_cadnum" placeholder="69:10:0000023:456" /></label>',
-      '    <label class="field field--full"><span class="field__label">Адрес или ориентир <em>*</em>',
-      '      <input type="text" name="object_address" required placeholder="г. Тверь, ул. Лесная, 12" /></label>',
       '    <label class="field"><span class="field__label">Площадь, м²',
       '      <input type="text" name="object_area" inputmode="decimal" placeholder="например, 1500" /></label>',
+      '    <label class="field field--full"><span class="field__label">Адрес или ориентир <em>*</em></span>',
+      '      <input type="text" name="object_address" required placeholder="г. Тверь, ул. Лесная, 12" /></label>',
       '    <label class="field"><span class="field__label">Присвоен ли официальный адрес?',
       '      <select name="object_address_official"><option value="">— не знаю —</option><option>Да</option><option>Нет</option></select></label>',
       '  </div>',
-      '  <div class="object__works"></div>',
       '</div>'
     ].join('');
   }
 
-  function refreshObjectWorks(card) {
-    var t = (card.querySelector('select[name="object_type"]') || {}).value;
-    var worksBox = card.querySelector('.object__works');
-    if (!t || !OBJECT_TYPES[t]) {
-      worksBox.innerHTML = '';
+  function updateObjectIcon(card) {
+    var t = (card.querySelector('select[name="object_type"]') || {}).value || '';
+    var addr = (card.querySelector('input[name="object_address"]') || {}).value || '';
+    var cad = (card.querySelector('input[name="object_cadnum"]') || {}).value || '';
+    var icon = (OBJECT_TYPES[t] || {}).icon || '📄';
+    var iconEl = card.querySelector('[data-icon]');
+    if (iconEl) iconEl.textContent = icon;
+    var sum = card.querySelector('.object__summary b');
+    var sub = card.querySelector('[data-subtitle]');
+    var title = t || 'Новый объект';
+    if (addr) {
+      var short = addr.length > 50 ? addr.slice(0, 50) + '…' : addr;
+      title += ' · ' + short;
+    }
+    if (sum) sum.textContent = title;
+    if (sub) {
+      var pieces = [];
+      if (cad) pieces.push('КН ' + cad);
+      pieces.push('Работ: ' + countWorks(card));
+      sub.textContent = pieces.join(' · ');
+    }
+  }
+
+  function countWorks(card) {
+    return card.querySelectorAll('input[type=checkbox][name^="work_"]:checked').length;
+  }
+
+  function removeObject(card) {
+    if (!confirm('Удалить объект?')) return;
+    var wasActive = card.dataset.objectId === activeWorkObjId;
+    card.parentNode.removeChild(card);
+    if (wasActive) activeWorkObjId = null;
+    refreshCopyFirst();
+    rebuildWorksNav();
+    if (activeWorkObjId) rebuildWorksFor(activeWorkObjId);
+    else clearWorksMain();
+  }
+
+  function refreshCopyFirst() {
+    var all = objectsList.querySelectorAll('.object');
+    all.forEach(function (card, idx) {
+      var copyFirst = card.querySelector('.object__copyfirst');
+      if (!copyFirst) return;
+      if (idx === 0) {
+        copyFirst.hidden = true;
+        var cb = copyFirst.querySelector('input[type=checkbox]');
+        if (cb) cb.checked = false;
+      } else {
+        copyFirst.hidden = false;
+      }
+    });
+  }
+
+  // ---- Step 4: nav + works for selected object -------------------------
+  function rebuildWorksNav() {
+    if (!worksNav) return;
+    worksNav.innerHTML = '';
+    var cards = objectsList.querySelectorAll('.object');
+    if (!cards.length) {
+      worksNav.innerHTML = '<p class="muted">Нет объектов. Вернитесь на&nbsp;шаг 3.</p>';
       return;
     }
-    var parts = ['<div class="object__section"><p class="object__section-title">Выберите нужные работы</p>'];
+    cards.forEach(function (card) {
+      var id = card.dataset.objectId;
+      var t = (card.querySelector('select[name="object_type"]') || {}).value || 'Объект';
+      var addr = (card.querySelector('input[name="object_address"]') || {}).value || '';
+      var icon = (OBJECT_TYPES[t] || {}).icon || '📄';
+      var title = addr ? addr : t;
+      var shortTitle = title.length > 30 ? title.slice(0, 30) + '…' : title;
+      var cnt = countWorks(card);
+
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'objnav' + (id === activeWorkObjId ? ' is-active' : '');
+      btn.dataset.objId = id;
+      btn.innerHTML = [
+        '<span class="objnav__icon">' + icon + '</span>',
+        '<span class="objnav__body">',
+        '  <span class="objnav__title">' + escapeHtml(shortTitle) + '</span>',
+        '  <span class="objnav__sub">' + escapeHtml(t) + '</span>',
+        '</span>',
+        '<span class="objnav__count">' + (cnt ? cnt : '') + '</span>'
+      ].join('');
+      btn.addEventListener('click', function () { selectWorkObj(id); });
+      worksNav.appendChild(btn);
+    });
+  }
+
+  function selectWorkObj(id) {
+    activeWorkObjId = id;
+    rebuildWorksNav();
+    rebuildWorksFor(id);
+  }
+
+  function rebuildWorksFor(idOrCard) {
+    var card = typeof idOrCard === 'string'
+      ? objectsList.querySelector('.object[data-object-id="' + idOrCard + '"]')
+      : idOrCard;
+    if (!card) { clearWorksMain(); return; }
+    var t = (card.querySelector('select[name="object_type"]') || {}).value;
+    var cnt = countWorks(card);
+    var name = (OBJECT_TYPES[t] || {}).icon || '📄';
+    var tname = t || 'Объект';
+
+    if (!t) {
+      worksMain.innerHTML = [
+        '<div class="works-for">',
+        '  <span class="works-for__icon">📄</span>',
+        '  <span class="works-for__name">Выберите тип объекта на&nbsp;шаге&nbsp;3</span>',
+        '</div>',
+        '<p class="works-for__empty">Вернитесь на&nbsp;шаг 3 и&nbsp;укажите тип объекта — тогда мы покажем доступные работы.</p>'
+      ].join('');
+      return;
+    }
+
+    var parts = [
+      '<div class="works-for">',
+      '  <span class="works-for__icon">' + name + '</span>',
+      '  <span class="works-for__name">' + escapeHtml(tname) + '</span>',
+      '  <span class="works-for__count">Выбрано: <b>' + cnt + '</b></span>',
+      '</div>'
+    ];
+
     OBJECT_TYPES[t].categories.forEach(function (cat) {
       parts.push('<div class="object__section">');
       parts.push('<p class="object__section-title">' + cat.title + '</p>');
       parts.push('<div class="checks">');
       cat.works.forEach(function (w) {
-        var name = 'work_' + cat.id + '_' + w[0];
-        parts.push('<label><input type="checkbox" name="' + name + '" value="' + cat.id + w[0] + '" />'
+        var name2 = 'work_' + cat.id + '_' + w[0];
+        // Галочка сохраняется в data-атрибуте карточки объекта, чтобы не терялась при перерендере
+        var checked = card.querySelector('input[name="' + name2 + '"]') ? ' checked' : '';
+        parts.push('<label><input type="checkbox" name="' + name2 + '" value="' + cat.id + w[0] + '" data-card="' + card.dataset.objectId + '"' + checked + ' />'
           + '<span>' + w[0] + '. ' + w[1] + '</span></label>');
       });
       parts.push('</div></div>');
     });
-    parts.push('</div>');
-    worksBox.innerHTML = parts.join('');
-    worksBox.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
-      cb.addEventListener('change', function () { updateObjectSummary(card); });
+    worksMain.innerHTML = parts.join('');
+
+    worksMain.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+      cb.addEventListener('change', function () {
+        updateObjectIcon(card);
+        // update nav count
+        var navBtn = worksNav.querySelector('.objnav[data-obj-id="' + card.dataset.objectId + '"] .objnav__count');
+        if (navBtn) navBtn.textContent = countWorks(card) || '';
+        // update header count
+        var cntEl = worksMain.querySelector('.works-for__count b');
+        if (cntEl) cntEl.textContent = countWorks(card);
+      });
     });
   }
 
-  function updateObjectSummary(card) {
-    var t = (card.querySelector('select[name="object_type"]') || {}).value || 'Новый объект';
-    var addr = (card.querySelector('input[name="object_address"]') || {}).value || '';
-    var cad = (card.querySelector('input[name="object_cadnum"]') || {}).value || '';
-    var works = [];
-    card.querySelectorAll('input[type=checkbox]:checked').forEach(function (cb) {
-      var lbl = cb.parentElement.querySelector('span');
-      if (lbl) works.push(lbl.textContent.replace(/^\d+\.\s*/, ''));
+  function clearWorksMain() {
+    if (!worksMain) return;
+    worksMain.innerHTML = '<p class="works-for__empty">Нет объектов. Вернитесь на&nbsp;шаг 3 и&nbsp;добавьте хотя бы один.</p>';
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
-    var titleBit = t;
-    if (addr) titleBit += ' · ' + (addr.length > 50 ? addr.slice(0, 50) + '…' : addr);
-    card.querySelector('[data-icon]').textContent = (OBJECT_TYPES[t] || {}).icon || '📄';
-    var sum = card.querySelector('.object__summary b');
-    var sub = card.querySelector('[data-subtitle]');
-    if (sum) sum.textContent = titleBit;
-    if (sub) {
-      var pieces = [];
-      if (cad) pieces.push('КН ' + cad);
-      pieces.push(works.length ? 'Работ: ' + works.length + ' (' + works.slice(0, 2).join(', ') + (works.length > 2 ? '…' : '') + ')'
-                              : 'Работы не выбраны');
-      sub.textContent = pieces.join(' · ');
-    }
   }
 
-  function collapseObject(card) {
-    card.classList.toggle('is-collapsed');
-    var btn = card.querySelector('.object__collapse');
-    btn.textContent = card.classList.contains('is-collapsed') ? '▸' : '▾';
-  }
-
-  function removeObject(card) {
-    if (!confirm('Удалить объект?')) return;
-    card.parentNode.removeChild(card);
-  }
-
+  // ---- Init add-object button -------------------------------------------
   document.getElementById('addObject').addEventListener('click', function () {
     var card = addObject();
+    refreshCopyFirst();
     card.classList.add('is-focused');
     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
@@ -308,6 +444,20 @@
     document.getElementById('prev').hidden = (n === 1);
     document.getElementById('next').hidden = (n >= TOTAL_STEPS);
     document.getElementById('submit').hidden = (n !== TOTAL_STEPS);
+
+    // При входе в шаг 4 — построить nav + выбрать первый объект
+    if (n === 4) {
+      var first = objectsList.querySelector('.object');
+      if (first) {
+        activeWorkObjId = first.dataset.objectId;
+      } else {
+        activeWorkObjId = null;
+      }
+      rebuildWorksNav();
+      if (activeWorkObjId) rebuildWorksFor(activeWorkObjId);
+      else clearWorksMain();
+    }
+
     if (n !== 'success') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -330,33 +480,88 @@
   function validateStep(n) {
     var panel = document.querySelector('.panel[data-panel="' + n + '"]');
     if (!panel) return true;
+
+    // Снимаем прошлую ошибку согласия
+    var consent = $('consent_pdn');
+    var consentBlock = consent ? consent.closest('.check') : null;
+    if (consentBlock) consentBlock.classList.remove('is-error');
+
     var required = panel.querySelectorAll('[required]');
     var ok = true;
     required.forEach(function (el) {
       var bad = el.type === 'checkbox' ? !el.checked : !el.value.trim();
       if (bad) {
-        el.style.borderColor = 'var(--danger)';
+        if (el.type !== 'checkbox') el.style.borderColor = 'var(--danger)';
         ok = false;
       } else {
         el.style.borderColor = '';
       }
     });
     if (!ok) {
-      panel.querySelector('.field') && panel.querySelector('.field').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      var firstField = panel.querySelector('.field');
+      if (firstField) firstField.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-    // For step 4, also require at least one object with at least one work
-    if (n === 4) {
-      if (!objectsList.children.length) {
+
+    // Шаг 3: должен быть хотя бы один объект, и у каждого — тип + адрес
+    if (n === 3) {
+      var cards = objectsList.querySelectorAll('.object');
+      if (!cards.length) {
         alert('Добавьте хотя бы один объект.');
         return false;
       }
+      var okStep3 = true;
+      cards.forEach(function (card) {
+        var t = (card.querySelector('select[name="object_type"]') || {}).value;
+        var a = (card.querySelector('input[name="object_address"]') || {}).value.trim();
+        if (!t) {
+          (card.querySelector('select[name="object_type"]') || {}).style && ((card.querySelector('select[name="object_type"]')).style.borderColor = 'var(--danger)');
+          okStep3 = false;
+        }
+        if (!a) {
+          (card.querySelector('input[name="object_address"]') || {}).style && ((card.querySelector('input[name="object_address"]')).style.borderColor = 'var(--danger)');
+          okStep3 = false;
+        }
+      });
+      if (!okStep3) return false;
+    }
+
+    // Шаг 4: для каждого объекта должна быть выбрана хотя бы одна работа
+    if (n === 4) {
+      var cards4 = objectsList.querySelectorAll('.object');
+      if (!cards4.length) {
+        alert('Добавьте хотя бы один объект на шаге 3.');
+        return false;
+      }
       var anyWork = false;
-      objectsList.querySelectorAll('input[type=checkbox]:checked').forEach(function () { anyWork = true; });
+      var emptyObjects = [];
+      cards4.forEach(function (card) {
+        if (countWorks(card) > 0) {
+          anyWork = true;
+        } else {
+          var t = (card.querySelector('select[name="object_type"]') || {}).value || 'объект';
+          emptyObjects.push(t);
+        }
+      });
       if (!anyWork) {
-        alert('Отметьте хотя бы одну работу.');
+        alert('Отметьте хотя бы одну работу для объекта: ' + emptyObjects.join(', '));
         return false;
       }
     }
+
+    // Шаг 5: согласие ПДн — отдельный красивый shake
+    if (n === 5) {
+      if (consent && !consent.checked) {
+        if (consentBlock) {
+          consentBlock.classList.remove('is-error');
+          // reflow → перезапуск анимации
+          void consentBlock.offsetWidth;
+          consentBlock.classList.add('is-error');
+          consentBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return false;
+      }
+    }
+
     return ok;
   }
 
@@ -382,6 +587,15 @@
     r.addEventListener('change', refreshConditional);
   });
   refreshConditional();
+
+  // ---- Снимаем shake при ручном отмечании чекбокса --------------------
+  var consentEl = $('consent_pdn');
+  if (consentEl) {
+    consentEl.addEventListener('change', function () {
+      var block = consentEl.closest('.check');
+      if (block) block.classList.remove('is-error');
+    });
+  }
 
   // ---- Navigation --------------------------------------------------------
   document.getElementById('prev').addEventListener('click', function () {
@@ -426,7 +640,7 @@
     });
   }
 
-  // ---- Cadastral number mask (all object cards + step 3 legacy) ----------
+  // ---- Cadastral number mask --------------------------------------------
   function attachCadnumMask(el) {
     if (!el || el.dataset.cadMask) return;
     el.dataset.cadMask = '1';
@@ -439,7 +653,6 @@
   document.addEventListener('input', function (e) {
     if (e.target && e.target.name === 'object_cadnum') attachCadnumMask(e.target);
   });
-  attachCadnumMask($('object_cadnum'));
 
   // ---- Build answers array in Yandex Forms shape ------------------------
   function buildAnswers() {
@@ -447,6 +660,7 @@
     var objects = [];
     objectsList.querySelectorAll('.object').forEach(function (card) {
       var o = {
+        object_id: card.dataset.objectId,
         object_type: (card.querySelector('select[name="object_type"]') || {}).value || '',
         object_cadnum: (card.querySelector('input[name="object_cadnum"]') || {}).value || '',
         object_address: (card.querySelector('input[name="object_address"]') || {}).value || '',
@@ -454,8 +668,8 @@
         object_address_official: (card.querySelector('select[name="object_address_official"]') || {}).value || '',
         work_a: [], work_b: [], work_c: [], work_d: []
       };
-      card.querySelectorAll('input[type=checkbox]:checked').forEach(function (cb) {
-        var v = cb.value || '';  // e.g. "A1", "B6", "D11"
+      card.querySelectorAll('input[type=checkbox][name^="work_"]:checked').forEach(function (cb) {
+        var v = cb.value || '';
         var prefix = v.charAt(0);
         var num = v.slice(1);
         if (o['work_' + prefix.toLowerCase()]) o['work_' + prefix.toLowerCase()].push(num);
@@ -463,18 +677,13 @@
       objects.push(o);
     });
 
-    // Map: first object's first work → "work_main" for TITLE.
-    // We also keep raw answers per object so backend can use them later.
     var primary = objects[0] || {};
     var workMain = '';
     var firstWorkArr = primary.work_a && primary.work_a.length ? primary.work_a
       : primary.work_b && primary.work_b.length ? primary.work_b
       : primary.work_c && primary.work_c.length ? primary.work_c
       : primary.work_d && primary.work_d.length ? primary.work_d : [];
-    if (firstWorkArr.length) {
-      // Will be expanded by the backend parser via WORK_CATALOG.
-      workMain = 'A' + firstWorkArr[0];
-    }
+    if (firstWorkArr.length) workMain = 'A' + firstWorkArr[0];
 
     var map = {
       customer_type: ct,
@@ -484,7 +693,6 @@
       phone: val('phone'),
       email: val('email'),
       snils: val('snils'),
-      // Legacy single-object fields (first object, for parser compat):
       object_kind: primary.object_type || '',
       object_cadnum: primary.object_cadnum || '',
       object_address: primary.object_address || '',
@@ -495,7 +703,6 @@
       work_b: (primary.work_b || []).join(', '),
       work_c: (primary.work_c || []).join(', '),
       work_d: (primary.work_d || []).join(', '),
-      // New multi-object field (sent as JSON-encoded string for transport).
       objects: JSON.stringify(objects),
       files_list: val('files_list'),
       notes: val('notes'),
@@ -554,4 +761,5 @@
   // ---- Init: open with one empty object ---------------------------------
   showStep(1);
   addObject();
+  refreshCopyFirst();
 })();

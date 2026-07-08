@@ -94,57 +94,27 @@
         </div>
       </section>
 
-      <!-- STEP 3 — объект -->
+      <!-- STEP 3 — объекты (multi) -->
       <section class="panel" data-panel="3">
-        <h2 class="panel__title">Объект работ</h2>
-        <div class="grid">
-          <label class="field">
-            <span class="field__label">Что является объектом <em>*</em></span>
-            <select name="object_kind" required>
-              <option value="">— выберите —</option>
-              <option>Земельный участок</option>
-              <option>Жилой дом / садовый дом</option>
-              <option>Квартира / помещение</option>
-              <option>Здание / сооружение</option>
-              <option>Объект незавершённого строительства</option>
-              <option>Машино-место</option>
-              <option>Линейный объект</option>
-              <option>Другое</option>
-            </select>
-          </label>
-          <label class="field">
-            <span class="field__label">Кадастровый номер <em>(если есть)</em></span>
-            <input type="text" name="object_cadnum" placeholder="69:10:0000023:456" />
-          </label>
-          <label class="field field--full">
-            <span class="field__label">Адрес или ориентир объекта <em>*</em></span>
-            <input type="text" name="object_address" required placeholder="Тверская обл., д. Медниково, ул. Лесная, 12" />
-          </label>
-          <label class="field">
-            <span class="field__label">Площадь, м²</span>
-            <input type="text" name="object_area" inputmode="decimal" placeholder="например, 1500" />
-          </label>
-          <label class="field">
-            <span class="field__label">Присвоен ли официальный адрес?</span>
-            <select name="object_address_official">
-              <option value="">— не знаю —</option>
-              <option>Да</option>
-              <option>Нет</option>
-            </select>
-          </label>
-        </div>
-      </section>
-
-      <!-- STEP 4 — работы (multi-object, dynamic) -->
-      <section class="panel" data-panel="4">
-        <h2 class="panel__title">Какие работы нужны?</h2>
-        <p class="panel__hint">Добавьте объекты и&nbsp;для каждого отметьте нужные работы. Можно несколько объектов в&nbsp;одной заявке.</p>
+        <h2 class="panel__title">Объекты работ</h2>
+        <p class="panel__hint">Можно добавить несколько объектов в&nbsp;одну заявку. На&nbsp;следующем шаге выберем для&nbsp;каждого нужные работы.</p>
 
         <div class="objects" id="objects" aria-live="polite"></div>
 
         <button type="button" class="btn btn--ghost btn--add" id="addObject">
           <span aria-hidden="true">＋</span> Добавить объект
         </button>
+      </section>
+
+      <!-- STEP 4 — работы (объекты слева, работы справа) -->
+      <section class="panel" data-panel="4">
+        <h2 class="panel__title">Какие работы нужны?</h2>
+        <p class="panel__hint">Слева&nbsp;— объекты. Кликните на&nbsp;объект и&nbsp;отметьте нужные работы напротив него.</p>
+
+        <div class="work-layout">
+          <aside class="work-layout__nav" id="worksNav" aria-label="Объекты"></aside>
+          <div class="work-layout__main" id="worksMain" aria-live="polite"></div>
+        </div>
 
         <div class="grid grid--2 mt-24">
           <label class="field">

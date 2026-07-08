@@ -689,7 +689,25 @@
   }
   document.addEventListener('input', function (e) {
     if (e.target && e.target.name === 'object_cadnum') attachCadnumMask(e.target);
+    if (e.target && e.target.name === 'agreed_price') attachPriceMask(e.target);
   });
+
+  // ---- Price mask (разделитель тысяч пробелами) -------------------------
+  function attachPriceMask(el) {
+    if (!el || el.dataset.priceMask) return;
+    el.dataset.priceMask = '1';
+    el.addEventListener('input', function (e) {
+      // Берём только цифры, делим на группы по 3 с конца
+      var d = e.target.value.replace(/\D/g, '').slice(0, 12);
+      var out = '';
+      while (d.length > 3) {
+        out = ' ' + d.slice(-3) + out;
+        d = d.slice(0, -3);
+      }
+      out = d + out;
+      e.target.value = out;
+    });
+  }
 
   // ---- Build answers array in Yandex Forms shape ------------------------
   function buildAnswers() {
@@ -748,6 +766,7 @@
       deadline: val('deadline'),
       urgency: val('urgency'),
       source: val('source'),
+      agreed_price: val('agreed_price'),
       consent_pdn: $('consent_pdn') && $('consent_pdn').checked
     };
     var answers = [];
@@ -774,10 +793,21 @@
       answers: buildAnswers()
     };
 
+    // multipart/form-data — чтобы прикрепить файлы.
+    // Backend (FastAPI) парсит это через python-multipart + UploadFile.
+    var fd = new FormData();
+    fd.append('payload', JSON.stringify(payload));
+    var filesInput = form.querySelector('input[name="files"]');
+    if (filesInput && filesInput.files) {
+      Array.prototype.forEach.call(filesInput.files, function (f) {
+        fd.append('files', f, f.name);
+      });
+    }
+
     fetch(ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      // НЕ указываем Content-Type — браузер сам выставит boundary
+      body: fd
     })
       .then(function (r) {
         return r.json().catch(function () { return {}; }).then(function (b) { return { ok: r.ok, status: r.status, body: b }; });
@@ -789,6 +819,12 @@
           document.getElementById('dealId').textContent = '(отправлено)';
         }
         showStep('success');
+        // Кнопка «На главную» вместо «Отправить заявку» / «Далее»
+        submit.hidden = true;
+        var nextBtn = document.getElementById('next');
+        if (nextBtn) nextBtn.hidden = true;
+        var homeBtn = document.getElementById('home');
+        if (homeBtn) homeBtn.hidden = false;
       })
       .catch(function (err) {
         alert('Не удалось отправить заявку. Попробуйте ещё раз или позвоните +7 (4822) 41-57-68.\n\nТехническая ошибка: ' + err.message);
@@ -796,6 +832,26 @@
         submit.textContent = 'Отправить заявку';
       });
   });
+
+  // ---- "На главную" — сбросить форму и вернуться на шаг 1 ----------------
+  var homeBtn = document.getElementById('home');
+  if (homeBtn) {
+    homeBtn.addEventListener('click', function () {
+      // Сбросить все поля
+      form.reset();
+      // Очистить все карточки объектов и добавить одну пустую
+      while (objectsList.firstChild) objectsList.removeChild(objectsList.firstChild);
+      objectSeq = 0;
+      addObject();
+      refreshCopyFirst();
+      // Сбросить активный объект для шага 4
+      activeWorkObjId = null;
+      // Спрятать кнопку «На главную», вернуть «Далее» / «Отправить»
+      homeBtn.hidden = true;
+      current = 1;
+      showStep(1);
+    });
+  }
 
   // ---- Init: open with one empty object ---------------------------------
   showStep(1);

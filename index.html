@@ -150,6 +150,11 @@
             <span class="field__label">Откуда узнали о нас?</span>
             <input type="text" name="source" placeholder="поиск, рекомендация, соцсети…" />
           </label>
+          <label class="field">
+            <span class="field__label">Стоимость работ, о&nbsp;которой договорились <em>(необязательно)</em></span>
+            <input type="text" name="agreed_price" inputmode="decimal" placeholder="например, 25 000" />
+            <span class="field__hint">Если вы уже обсуждали стоимость с&nbsp;нашим менеджером — укажите её здесь, и&nbsp;мы зафиксируем сумму в&nbsp;сделке.</span>
+          </label>
           <label class="check field--full">
             <input type="checkbox" name="consent_pdn" required />
             <span>Согласен на обработку персональных данных в&nbsp;соответствии с&nbsp;<a href="#" onclick="return false">политикой 152-ФЗ</a></span>
@@ -171,6 +176,7 @@
         <span class="nav__spacer"></span>
         <button type="button" class="btn btn--primary" id="next">Далее →</button>
         <button type="submit" class="btn btn--primary" id="submit" hidden>Отправить заявку</button>
+        <button type="button" class="btn btn--primary" id="home" hidden>На главную</button>
       </nav>
     </form>
 

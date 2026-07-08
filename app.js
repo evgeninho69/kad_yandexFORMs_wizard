@@ -7,7 +7,7 @@
   // ---- Endpoint -----------------------------------------------------------
   // FastAPI service (kad_yandexFORMs_leads) deployed in Dokploy.
   // Same project as the wizard (kad_yandexFORMs_leads / production).
-  var ENDPOINT = 'https://kad-yandexFORMs-leads.dev.ii4ki.ru/webhook/yandex';
+  var ENDPOINT = 'https://kad-yandexforms-leads.dev.ii4ki.ru/webhook/yandex';
 
   // ---- Object types → available work codes (mirrors backend parser) ----
   // Each item: [code, label, hint]

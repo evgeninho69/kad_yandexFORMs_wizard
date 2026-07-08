@@ -177,6 +177,9 @@
     var div = document.createElement('div');
     div.className = 'object';
     div.dataset.objectId = id;
+    // Хранилище выбора работ — { "B1": true, "D11": false, ... }
+    // Не зависит от рендера чекбоксов в шаге 4, переживает переключение объектов.
+    div.selectedWorks = {};
     div.innerHTML = renderObjectForm(id);
     objectsList.appendChild(div);
 
@@ -281,7 +284,10 @@
   }
 
   function countWorks(card) {
-    return card.querySelectorAll('input[type=checkbox][name^="work_"]:checked').length;
+    if (!card || !card.selectedWorks) return 0;
+    var n = 0;
+    Object.keys(card.selectedWorks).forEach(function (k) { if (card.selectedWorks[k]) n++; });
+    return n;
   }
 
   function removeObject(card) {
@@ -385,10 +391,11 @@
       parts.push('<p class="object__section-title">' + cat.title + '</p>');
       parts.push('<div class="checks">');
       cat.works.forEach(function (w) {
-        var name2 = 'work_' + cat.id + '_' + w[0];
-        // Галочка сохраняется в data-атрибуте карточки объекта, чтобы не терялась при перерендере
-        var checked = card.querySelector('input[name="' + name2 + '"]') ? ' checked' : '';
-        parts.push('<label><input type="checkbox" name="' + name2 + '" value="' + cat.id + w[0] + '" data-card="' + card.dataset.objectId + '"' + checked + ' />'
+        var code = cat.id + w[0];  // "B1", "D11", ...
+        var name2 = 'work_' + code;
+        // Состояние берём из card.selectedWorks — переживает переключение объектов.
+        var isOn = !!card.selectedWorks[code];
+        parts.push('<label><input type="checkbox" name="' + name2 + '" value="' + code + '" data-card="' + card.dataset.objectId + '"' + (isOn ? ' checked' : '') + ' />'
           + '<span>' + w[0] + '. ' + w[1] + '</span></label>');
       });
       parts.push('</div></div>');
@@ -397,6 +404,8 @@
 
     worksMain.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
       cb.addEventListener('change', function () {
+        var code = cb.value;
+        card.selectedWorks[code] = cb.checked;
         updateObjectIcon(card);
         // update nav count
         var navBtn = worksNav.querySelector('.objnav[data-obj-id="' + card.dataset.objectId + '"] .objnav__count');
@@ -679,10 +688,13 @@
         object_address_official: (card.querySelector('select[name="object_address_official"]') || {}).value || '',
         work_a: [], work_b: [], work_c: [], work_d: []
       };
-      card.querySelectorAll('input[type=checkbox][name^="work_"]:checked').forEach(function (cb) {
-        var v = cb.value || '';
-        var prefix = v.charAt(0);
-        var num = v.slice(1);
+      // Собираем работы из card.selectedWorks (а не из DOM, потому что в шаге 4
+      // чекбоксы рендерятся динамически и могут не существовать в момент submit).
+      var sel = card.selectedWorks || {};
+      Object.keys(sel).forEach(function (code) {
+        if (!sel[code]) return;
+        var prefix = code.charAt(0);
+        var num = code.slice(1);
         if (o['work_' + prefix.toLowerCase()]) o['work_' + prefix.toLowerCase()].push(num);
       });
       objects.push(o);
@@ -715,7 +727,6 @@
       work_c: (primary.work_c || []).join(', '),
       work_d: (primary.work_d || []).join(', '),
       objects: JSON.stringify(objects),
-      files_list: val('files_list'),
       notes: val('notes'),
       deadline: val('deadline'),
       urgency: val('urgency'),

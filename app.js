@@ -557,6 +557,17 @@
           void consentBlock.offsetWidth;
           consentBlock.classList.add('is-error');
           consentBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Дополнительно: подсветим всю панель шага 5
+          if (panel) {
+            panel.classList.remove('is-error');
+            void panel.offsetWidth;
+            panel.classList.add('is-error');
+          }
+        } else {
+          // consentBlock == null — что-то не так с разметкой
+          if (window.console && console.warn) {
+            console.warn('consent_pdn: ближайший .check не найден');
+          }
         }
         return false;
       }

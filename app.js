@@ -660,15 +660,28 @@
     });
   }
 
-  // ---- Cadastral number mask --------------------------------------------
+  // ---- Cadastral number mask (РФ: XX:XX:XXXXXXX:XX..XXXX, 13–15 цифр) ---
+  // Формат по приказу Росреестра П/0592:
+  //   ЗУ:   AA:BB:CCCCCCC:DD            (2+2+7+2 = 13)
+  //   ОКС:  AA:BB:CCCCCCC:DDDD         (2+2+7+4 = 15)  (здание, сооружение, ОНС, машино-место)
+  //   Помещение (старый формат): AA:BB:CCCCCC:DD  (2+2+6+2 = 12)
+  // Маска: пользователь вводит ТОЛЬКО цифры; двоеточия подставляются автоматически.
   function attachCadnumMask(el) {
     if (!el || el.dataset.cadMask) return;
     el.dataset.cadMask = '1';
     el.addEventListener('input', function (e) {
-      var d = e.target.value.replace(/\D/g, '').slice(0, 19);
-      var parts = [d.slice(0, 2), d.slice(2, 4), d.slice(4, 7), d.slice(7)];
-      e.target.value = parts.filter(Boolean).join(':');
+      var d = e.target.value.replace(/\D/g, '').slice(0, 15);
+      // Первые три двоеточия вставляются всегда по позициям 2 и 4.
+      var out = '';
+      if (d.length > 0) out = d.slice(0, 2);
+      if (d.length > 2) out += ':' + d.slice(2, 4);
+      if (d.length > 4) out += ':' + d.slice(4, Math.min(11, d.length));
+      if (d.length > 11) out += ':' + d.slice(11, 15);
+      e.target.value = out;
     });
+    el.setAttribute('inputmode', 'numeric');
+    el.setAttribute('autocomplete', 'off');
+    el.setAttribute('maxlength', '18');  // "XX:XX:XXXXXXX:XXXX" = 18 chars
   }
   document.addEventListener('input', function (e) {
     if (e.target && e.target.name === 'object_cadnum') attachCadnumMask(e.target);

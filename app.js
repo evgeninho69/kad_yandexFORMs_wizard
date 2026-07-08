@@ -660,28 +660,32 @@
     });
   }
 
-  // ---- Cadastral number mask (РФ: XX:XX:XXXXXXX:XX..XXXX, 13–15 цифр) ---
+  // ---- Cadastral number mask (РФ: XX:XX:XXXXXXX:XXXXX..., ≥13 цифр) ---
   // Формат по приказу Росреестра П/0592:
-  //   ЗУ:   AA:BB:CCCCCCC:DD            (2+2+7+2 = 13)
-  //   ОКС:  AA:BB:CCCCCCC:DDDD         (2+2+7+4 = 15)  (здание, сооружение, ОНС, машино-место)
-  //   Помещение (старый формат): AA:BB:CCCCCC:DD  (2+2+6+2 = 12)
-  // Маска: пользователь вводит ТОЛЬКО цифры; двоеточия подставляются автоматически.
+  //   ЗУ:        AA:BB:CCCCCCC:DD            (2+2+7+2   = 13)
+  //   ОКС:       AA:BB:CCCCCCC:DDDD         (2+2+7+4   = 15)
+  //   Сооружения:AA:BB:CCCCCCC:DDDDDDD...   (2+2+7+∞   = 13+  — последняя часть НЕ ограничена)
+  //   Помещение: AA:BB:CCCCCC:DD            (2+2+6+2   = 12, старый формат)
+  // Маска: пользователь вводит ТОЛЬКО цифры; двоеточия подставляются по позициям
+  // 2, 4 и 11. После 11-й цифры — всё остальное идёт в последнюю группу без ограничения.
   function attachCadnumMask(el) {
     if (!el || el.dataset.cadMask) return;
     el.dataset.cadMask = '1';
     el.addEventListener('input', function (e) {
-      var d = e.target.value.replace(/\D/g, '').slice(0, 15);
-      // Первые три двоеточия вставляются всегда по позициям 2 и 4.
+      var d = e.target.value.replace(/\D/g, '');
+      // Без жёсткого потолка — последняя часть может быть сколь угодно длинной.
+      // Но чтобы UI оставался читабельным, ограничим общую длину до 30 цифр.
+      d = d.slice(0, 30);
       var out = '';
       if (d.length > 0) out = d.slice(0, 2);
       if (d.length > 2) out += ':' + d.slice(2, 4);
-      if (d.length > 4) out += ':' + d.slice(4, Math.min(11, d.length));
-      if (d.length > 11) out += ':' + d.slice(11, 15);
+      if (d.length > 4) out += ':' + d.slice(4, 11);
+      if (d.length > 11) out += ':' + d.slice(11);
       e.target.value = out;
     });
     el.setAttribute('inputmode', 'numeric');
     el.setAttribute('autocomplete', 'off');
-    el.setAttribute('maxlength', '18');  // "XX:XX:XXXXXXX:XXXX" = 18 chars
+    el.removeAttribute('maxlength');  // maxlength теперь зависит от длины ввода
   }
   document.addEventListener('input', function (e) {
     if (e.target && e.target.name === 'object_cadnum') attachCadnumMask(e.target);

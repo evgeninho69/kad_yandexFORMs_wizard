@@ -118,18 +118,31 @@ body {
 
 /* Consent ПДн: shake + red glow при ошибке */
 .check.is-error {
-  background: #fdecea;
-  border: 2px solid var(--danger);
-  animation: shake 0.45s cubic-bezier(.36,.07,.19,.97) both;
-  box-shadow: 0 0 0 4px rgba(200, 48, 43, 0.12);
+  background: #fdecea !important;
+  border: 2px solid var(--danger) !important;
+  animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
+  box-shadow: 0 0 0 4px rgba(200, 48, 43, 0.18);
 }
-.check.is-error input { outline: 3px solid var(--danger); outline-offset: 2px; border-radius: 4px; }
-.check.is-error a { color: var(--danger); }
+.check.is-error input[type="checkbox"] {
+  outline: 3px solid var(--danger) !important;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.check.is-error a { color: var(--danger) !important; font-weight: 600; }
+.check.is-error::before {
+  content: "⚠ Поставьте галочку, чтобы отправить заявку";
+  display: block;
+  width: 100%;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--danger);
+  margin-bottom: 6px;
+}
 @keyframes shake {
-  10%, 90% { transform: translateX(-2px); }
-  20%, 80% { transform: translateX(4px); }
-  30%, 50%, 70% { transform: translateX(-8px); }
-  40%, 60% { transform: translateX(8px); }
+  10%, 90% { transform: translateX(-3px); }
+  20%, 80% { transform: translateX(6px); }
+  30%, 50%, 70% { transform: translateX(-12px); }
+  40%, 60% { transform: translateX(12px); }
 }
 @media (prefers-reduced-motion: reduce) {
   .check.is-error { animation: none; }
